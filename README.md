@@ -22,7 +22,7 @@ export CHAOXING_ACCOUNT_PASSWORD=<REDACTED>
 ### Step 3. Upload a file
 
 ```bash
-share Elaina.png
+share Elaina-Houki.jpg
 ```
 
 #### Output
