@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 
 	"github.com/wuhan005/share/internal/chaoxing"
@@ -34,6 +35,9 @@ func login(c *cli.Context) error {
 	phone := c.String("phone")
 	password := c.String("password")
 
-	client := chaoxing.NewClient(phone, password)
+	client, err := chaoxing.NewClient(phone, password)
+	if err != nil {
+		return errors.Wrap(err, "new client")
+	}
 	return client.Login()
 }
