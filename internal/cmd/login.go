@@ -15,20 +15,6 @@ var Login = &cli.Command{
 	Name:   "login",
 	Usage:  "Login to a Chaoxing account.",
 	Action: login,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:     "phone",
-			Usage:    "Phone number of the Chaoxing account.",
-			EnvVars:  []string{"CHAOXING_ACCOUNT_PHONE"},
-			Required: true,
-		},
-		&cli.StringFlag{
-			Name:     "password",
-			Usage:    "Password number of the Chaoxing account.",
-			EnvVars:  []string{"CHAOXING_ACCOUNT_PASSWORD"},
-			Required: true,
-		},
-	},
 }
 
 func login(c *cli.Context) error {

@@ -12,8 +12,11 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
+	"github.com/schollz/progressbar/v3"
+	log "unknwon.dev/clog/v2"
 )
 
 type UploadResponse struct {
@@ -47,6 +50,33 @@ func (c *Client) Upload(path string) (*UploadResponse, error) {
 		return nil, errors.Wrap(err, "open file")
 	}
 	defer func() { _ = file.Close() }()
+
+	// Progress bar
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return nil, errors.Wrap(err, "get file info")
+	}
+	bar := progressbar.NewOptions64(
+		fileInfo.Size(),
+		progressbar.OptionSetWriter(os.Stderr),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionSetWidth(10),
+		progressbar.OptionThrottle(65*time.Millisecond),
+		progressbar.OptionShowCount(),
+		progressbar.OptionOnCompletion(func() {
+			_, _ = fmt.Fprint(os.Stderr, "\n")
+		}),
+		progressbar.OptionSpinnerType(14),
+		progressbar.OptionFullWidth(),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "=",
+			SaucerPadding: " ",
+			BarStart:      "|",
+			BarEnd:        "|",
+			SaucerHead:    ">",
+		}),
+	)
+
 	fileWriter, err := bufferWriter.CreateFormFile("attrFile", file.Name())
 	if err != nil {
 		return nil, errors.Wrap(err, "create file writer")
@@ -58,7 +88,9 @@ func (c *Client) Upload(path string) (*UploadResponse, error) {
 		return nil, errors.Wrap(err, "close buffer writer")
 	}
 
-	resp, err := c.client.Post("https://notice.chaoxing.com/pc/files/uploadNoticeFile", bufferWriter.FormDataContentType(), buf)
+	log.Trace("Upload file %q...", file.Name())
+	reader := progressbar.NewReader(buf, bar)
+	resp, err := c.client.Post("https://notice.chaoxing.com/pc/files/uploadNoticeFile", bufferWriter.FormDataContentType(), &reader)
 	if err != nil {
 		return nil, errors.Wrap(err, "request")
 	}

@@ -25,6 +25,21 @@ func main() {
 	app.Commands = []*cli.Command{
 		cmd.Login,
 	}
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:     "phone",
+			Usage:    "Phone number of the Chaoxing account.",
+			EnvVars:  []string{"CHAOXING_ACCOUNT_PHONE"},
+			Required: true,
+		},
+		&cli.StringFlag{
+			Name:     "password",
+			Usage:    "Password number of the Chaoxing account.",
+			EnvVars:  []string{"CHAOXING_ACCOUNT_PASSWORD"},
+			Required: true,
+		},
+	}
+	app.Action = cmd.Share
 
 	if err := app.Run(os.Args); err != nil {
 		log.Error("%v", err)
