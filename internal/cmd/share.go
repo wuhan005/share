@@ -34,10 +34,7 @@ var Share = func(c *cli.Context) error {
 	}
 
 	fileID := resp.AttFile.AttClouddisk.FileId
-	downloadURL, err := chaoxing.GetDownloadURL(fileID)
-	if err != nil {
-		return errors.Wrap(err, "get download URL")
-	}
+	downloadURL := chaoxing.GetDownloadURL(fileID)
 	log.Info("%s", downloadURL)
 	return nil
 }

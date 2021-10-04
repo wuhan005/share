@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
-	"net/http"
 	"os"
 	"time"
 
@@ -112,35 +111,6 @@ func GetShareURL(objectURL string) string {
 	return fmt.Sprintf("https://pan-yz.chaoxing.com/external/m/file/" + objectURL)
 }
 
-func GetDownloadURL(objectURL string) (string, error) {
-	var respJSON struct {
-		Message     string `json:"msg"`
-		DownloadURL string `json:"download"`
-		PreviewURL  string `json:"url"`
-		Status      bool   `json:"status"`
-	}
-
-	resp, err := http.Get("https://noteyd.chaoxing.com/screen/note_note/files/status/" + objectURL)
-	if err != nil {
-		return "", errors.Wrap(err, "request")
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	// It always returns 200 OK whenever file is found.
-	if resp.StatusCode/100 != 2 {
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return "", errors.Wrap(err, "read response body")
-		}
-		return "", errors.Errorf("unexpected status code: %d, response body: %q", resp.StatusCode, string(respBody))
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&respJSON); err != nil {
-		return "", errors.Wrap(err, "json decode")
-	}
-
-	if !respJSON.Status {
-		return "", errors.Errorf("get download url: %q", respJSON.Message)
-	}
-	return respJSON.DownloadURL, nil
+func GetDownloadURL(objectID string) string {
+	return "http://cloud.ananas.chaoxing.com/view/fileviewDownload?objectId=" + objectID
 }
