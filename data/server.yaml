@@ -25,3 +25,16 @@ oppo:
   response:
     - type: expression
       action: "'https://pic' + random.randint(1, 8) + '.58cdn.com.cn/nowater/webim/big/' + input"
+
+vipkid:
+  method: POST
+  url: https://www.vipkid.com/rest/gw/api/upload/vos
+  headers:
+    Content-Type: multipart/form-data
+    vk-cr-code: kr
+  body:
+    file: ${file}
+    uploadType: IM
+  response:
+    - type: json
+      action: data.url
