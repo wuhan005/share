@@ -21,6 +21,7 @@ func Parse(options ParseOptions) (string, error) {
 		ext.Encoders(),
 		ext.Strings(),
 		Randoms(),
+		JSONs(),
 	}
 	for k, v := range options.VariableDefs {
 		v := v

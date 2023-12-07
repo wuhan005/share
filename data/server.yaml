@@ -38,3 +38,19 @@ vipkid:
   response:
     - type: json
       action: data.url
+
+sohu:
+  method: POST
+  url: https://changyan.sohu.com/api/2/comment/attachment
+  headers:
+    Content-Type: multipart/form-data
+  body:
+    file: ${file}
+    type: feedback
+  response:
+    - type: expression
+      action: "json.loads(input)"
+    - type: json
+      action: url
+
+
