@@ -19,3 +19,4 @@
 .task
 .envrc
 share
+!share/

@@ -5,11 +5,11 @@
 package parser
 
 import (
-	"strings"
-
+	"github.com/google/cel-go/cel"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 
+	"github.com/wuhan005/share/internal/expression"
 	"github.com/wuhan005/share/internal/yaml"
 )
 
@@ -22,24 +22,34 @@ type Parser struct {
 
 func (p *Parser) Do(input string) (string, error) {
 	output := input
+	var err error
 
 	switch p.Type {
-	case "replace":
-		var group []string
-		if err := p.Action.Unmarshal(&group); err != nil {
-			return "", errors.Wrap(err, "unmarshal replace group")
-		}
-		if len(group)%2 != 0 {
-			return "", errors.New("replace group must be even")
-		}
-		output = strings.NewReplacer(group...).Replace(output)
-
 	case "json":
 		var jsonPath string
 		if err := p.Action.Unmarshal(&jsonPath); err != nil {
 			return "", errors.Wrap(err, "unmarshal json path")
 		}
 		output = gjson.Get(output, jsonPath).String()
+
+	case "expression":
+		var expressionStr string
+		if err := p.Action.Unmarshal(&expressionStr); err != nil {
+			return "", errors.Wrap(err, "unmarshal expression")
+		}
+
+		output, err = expression.Parse(expression.ParseOptions{
+			Expression: expressionStr,
+			VariableDefs: map[string]*cel.Type{
+				"input": cel.StringType,
+			},
+			Variables: map[string]interface{}{
+				"input": output,
+			},
+		})
+		if err != nil {
+			return "", errors.Wrap(err, "parse expression")
+		}
 
 	default:
 		return "", errors.Errorf("unknown parser type: %q", p.Type)

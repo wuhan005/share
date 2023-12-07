@@ -7,9 +7,21 @@ oppo:
     type: feedback
     file: ${file}
   response:
-    - type: replace
-      action:
-        - https://store2.heytapimage.com/
-        - https://store.heytapimage.com/
+    - type: expression
+      action: "input.replace('https://store2.heytapimage.com/', 'https://store.heytapimage.com/')"
     - type: json
       action: data.url
+
+58:
+  method: POST
+  url: https://upload.58cdn.com.cn/json
+  headers:
+    Content-Type: application/json
+  body:
+    Pic-Size: 0*0
+    Pic-Encoding: base64
+    Pic-Path: /nowater/webim/big/
+    Pic-Data: ${base64.encode(file)}
+  response:
+    - type: expression
+      action: "'https://pic' + random.randint(1, 8) + '.58cdn.com.cn/nowater/webim/big/' + input"

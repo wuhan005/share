@@ -6,11 +6,15 @@ package share
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"mime/multipart"
 	"os"
 
+	"github.com/google/cel-go/cel"
 	"github.com/pkg/errors"
+
+	"github.com/wuhan005/share/internal/expression"
 )
 
 type makeMultipartFormDataOptions struct {
@@ -42,4 +46,39 @@ func makeMultipartFormData(options makeMultipartFormDataOptions) (io.Reader, str
 	}
 
 	return &requestBody, writer.FormDataContentType(), nil
+}
+
+type makeJsonOptions struct {
+	UploadedFile *os.File
+	Body         map[string]string
+}
+
+func makeJson(options makeJsonOptions) (io.Reader, error) {
+	uploadedFileBytes, err := io.ReadAll(options.UploadedFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "read uploaded file")
+	}
+
+	for k, v := range options.Body {
+		if v == bodyFileFieldKey {
+			options.Body[k] = string(uploadedFileBytes)
+		} else if len(v) > 3 && v[0:2] == "${" && v[len(v)-1:] == "}" {
+			expressionStr := v[2 : len(v)-1]
+			result, err := expression.Parse(expression.ParseOptions{
+				VariableDefs: map[string]*cel.Type{"file": cel.BytesType},
+				Variables:    map[string]interface{}{"file": uploadedFileBytes},
+				Expression:   expressionStr,
+			})
+			if err != nil {
+				return nil, errors.Wrapf(err, "parse expression of %q: %q", k, expressionStr)
+			}
+			options.Body[k] = result
+		}
+	}
+
+	var requestBody bytes.Buffer
+	if err := json.NewEncoder(&requestBody).Encode(options.Body); err != nil {
+		return nil, errors.Wrap(err, "encode json")
+	}
+	return &requestBody, nil
 }

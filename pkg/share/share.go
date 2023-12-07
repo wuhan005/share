@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/imroc/req/v3"
 	"github.com/pkg/errors"
 
 	"github.com/wuhan005/share/internal/parser"
@@ -33,6 +34,7 @@ func Share(server string, filePath string) (string, error) {
 		return "", errors.Errorf("server %q not found", server)
 	}
 	requestHeader := parseHeader(s.Headers)
+	contentType := requestHeader.Get("Content-Type")
 
 	// Open file.
 	uploadedFile, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
@@ -42,7 +44,7 @@ func Share(server string, filePath string) (string, error) {
 	defer func() { _ = uploadedFile.Close() }()
 
 	var body io.Reader
-	switch requestHeader.Get("Content-Type") {
+	switch contentType {
 	case "multipart/form-data":
 		requestBody, contentType, err := makeMultipartFormData(makeMultipartFormDataOptions{
 			UploadedFile: uploadedFile,
@@ -56,20 +58,34 @@ func Share(server string, filePath string) (string, error) {
 
 	case "application/x-www-form-urlencoded":
 	case "application/json":
+		requestBody, err := makeJson(makeJsonOptions{
+			UploadedFile: uploadedFile,
+			Body:         s.Body,
+		})
+		if err != nil {
+			return "", errors.Wrap(err, "make json")
+		}
+		body = requestBody
+	default:
+		return "", errors.Errorf("unknown content type: %q", contentType)
 	}
 
-	req, err := http.NewRequest(s.Method, s.URL, body)
-	if err != nil {
-		return "", errors.Wrap(err, "new request")
-	}
-	req.Header = requestHeader
+	client := req.C()
+	request := client.R()
+	request.Headers = requestHeader
+	request = request.
+		SetHeader("X-Forwarded-For", s.URL).
+		SetBody(body)
 
-	client := http.Client{}
-	resp, err := client.Do(req)
+	resp, err := request.Send(s.Method, s.URL)
 	if err != nil {
 		return "", errors.Wrap(err, "do request")
 	}
 	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Errorf("response status code: %d", resp.StatusCode)
+	}
 
 	responseBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
