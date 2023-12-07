@@ -1,0 +1,15 @@
+oppo:
+  method: POST
+  url: https://api.open.oppomobile.com/api/utility/upload
+  headers:
+    Content-Type: multipart/form-data
+  body:
+    type: feedback
+    file: ${file}
+  response:
+    - type: replace
+      action:
+        - https://store2.heytapimage.com/
+        - https://store.heytapimage.com/
+    - type: json
+      action: data.url
