@@ -27,6 +27,16 @@ type Server struct {
 const bodyFileFieldKey = "${file}"
 
 func Share(server string, filePath string) (string, error) {
+	uploadedFile, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
+	if err != nil {
+		return "", errors.Wrap(err, "open uploaded file")
+	}
+	defer func() { _ = uploadedFile.Close() }()
+
+	return File(server, uploadedFile)
+}
+
+func File(server string, uploadedFile *os.File) (string, error) {
 	servers.RLock()
 	defer func() { servers.RUnlock() }()
 
@@ -36,13 +46,6 @@ func Share(server string, filePath string) (string, error) {
 	}
 	requestHeader := parseHeader(s.Headers)
 	contentType := requestHeader.Get("Content-Type")
-
-	// Open file.
-	uploadedFile, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
-	if err != nil {
-		return "", errors.Wrap(err, "open uploaded file")
-	}
-	defer func() { _ = uploadedFile.Close() }()
 
 	var body io.Reader
 	switch contentType {
