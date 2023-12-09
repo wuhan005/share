@@ -6,6 +6,7 @@ package share
 
 import (
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 
@@ -101,6 +102,17 @@ func Share(server string, filePath string) (string, error) {
 	}
 
 	return output, nil
+}
+
+func RandomServer() string {
+	servers.RLock()
+	defer func() { servers.RUnlock() }()
+
+	names := make([]string, 0, len(servers.m))
+	for name := range servers.m {
+		names = append(names, name)
+	}
+	return names[rand.Intn(len(names))]
 }
 
 func parseHeader(h map[string]string) http.Header {
