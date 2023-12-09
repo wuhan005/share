@@ -33,10 +33,10 @@ func Share(server string, filePath string) (string, error) {
 	}
 	defer func() { _ = uploadedFile.Close() }()
 
-	return File(server, uploadedFile)
+	return Reader(server, uploadedFile)
 }
 
-func File(server string, uploadedFile *os.File) (string, error) {
+func Reader(server string, uploadedReader io.Reader) (string, error) {
 	servers.RLock()
 	defer func() { servers.RUnlock() }()
 
@@ -51,7 +51,7 @@ func File(server string, uploadedFile *os.File) (string, error) {
 	switch contentType {
 	case "multipart/form-data":
 		requestBody, contentType, err := makeMultipartFormData(makeMultipartFormDataOptions{
-			UploadedFile: uploadedFile,
+			UploadedFile: uploadedReader,
 			Body:         s.Body,
 		})
 		if err != nil {
@@ -63,7 +63,7 @@ func File(server string, uploadedFile *os.File) (string, error) {
 	case "application/x-www-form-urlencoded":
 	case "application/json":
 		requestBody, err := makeJson(makeJsonOptions{
-			UploadedFile: uploadedFile,
+			UploadedFile: uploadedReader,
 			Body:         s.Body,
 		})
 		if err != nil {

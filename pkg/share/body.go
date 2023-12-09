@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"io"
 	"mime/multipart"
-	"os"
 
 	"github.com/google/cel-go/cel"
 	"github.com/pkg/errors"
@@ -18,7 +17,7 @@ import (
 )
 
 type makeMultipartFormDataOptions struct {
-	UploadedFile *os.File
+	UploadedFile io.Reader
 	Body         map[string]string
 }
 
@@ -28,7 +27,7 @@ func makeMultipartFormData(options makeMultipartFormDataOptions) (io.Reader, str
 
 	for k, v := range options.Body {
 		if v == bodyFileFieldKey {
-			fileWriter, err := writer.CreateFormFile(k, options.UploadedFile.Name())
+			fileWriter, err := writer.CreateFormFile(k, "image.png")
 			if err != nil {
 				return nil, "", errors.Wrap(err, "create form file field")
 			}
@@ -49,7 +48,7 @@ func makeMultipartFormData(options makeMultipartFormDataOptions) (io.Reader, str
 }
 
 type makeJsonOptions struct {
-	UploadedFile *os.File
+	UploadedFile io.Reader
 	Body         map[string]string
 }
 
